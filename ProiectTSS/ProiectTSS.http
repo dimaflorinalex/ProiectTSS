@@ -1,6 +1,306 @@
 @ProiectTSS_HostAddress = http://localhost:5158
 
-GET {{ProiectTSS_HostAddress}}/weatherforecast/
-Accept: application/json
+### 1) BRACKETS - Local, weight 0-1kg
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
 
-###
+{
+  "zone": "Local",
+  "subtotal": 100,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [
+    { "weightKg": 0.8, "size": "Small" }
+  ],
+  "pricingModel": "Brackets",
+  "roundingRule": "None"
+}
+
+### 2) BRACKETS - National, weight 1-5kg
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": "National",
+  "subtotal": 120,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [
+    { "weightKg": 3.2, "size": "Medium" }
+  ],
+  "pricingModel": "Brackets",
+  "roundingRule": "None"
+}
+
+### 3) BRACKETS - International, weight 5-10kg
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": "International",
+  "subtotal": 150,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [
+    { "weightKg": 7.5, "size": "Large" }
+  ],
+  "pricingModel": "Brackets",
+  "roundingRule": "None"
+}
+
+### 4) BRACKETS - over 10kg extra fee path
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": "National",
+  "subtotal": 120,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [
+    { "weightKg": 12.5, "size": "Small" }
+  ],
+  "pricingModel": "Brackets",
+  "roundingRule": "None"
+}
+
+### 5) BASE_PLUS_PER_KG model
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": "Local",
+  "subtotal": 90,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [
+    { "weightKg": 4.0, "size": "Medium" }
+  ],
+  "pricingModel": "BasePlusPerKg",
+  "roundingRule": "None"
+}
+
+### 6) Rounding rule CEIL_1KG
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": "Local",
+  "subtotal": 90,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [
+    { "weightKg": 1.2, "size": "Small" }
+  ],
+  "pricingModel": "BasePlusPerKg",
+  "roundingRule": "Ceil1Kg"
+}
+
+### 7) Rounding rule CEIL_0_5KG
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": "Local",
+  "subtotal": 90,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [
+    { "weightKg": 1.2, "size": "Small" }
+  ],
+  "pricingModel": "BasePlusPerKg",
+  "roundingRule": "Ceil0_5Kg"
+}
+
+### 8) Surcharges - Fragile + Rapid
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": "National",
+  "subtotal": 130,
+  "options": { "rapid": true, "fragil": true },
+  "parcels": [
+    { "weightKg": 2.5, "size": "Medium" }
+  ],
+  "pricingModel": "Brackets",
+  "roundingRule": "None"
+}
+
+### 9) Multiple parcels list
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": "International",
+  "subtotal": 180,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [
+    { "weightKg": 0.7, "size": "Small" },
+    { "weightKg": 4.8, "size": "Medium" },
+    { "weightKg": 9.3, "size": "Large" }
+  ],
+  "pricingModel": "Brackets",
+  "roundingRule": "None"
+}
+
+### 10) Coupon Percent applied on shipping
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": "Local",
+  "subtotal": 140,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [
+    { "weightKg": 3.0, "size": "Medium" }
+  ],
+  "coupon": { "type": "Percent", "value": 25 },
+  "pricingModel": "Brackets",
+  "roundingRule": "None"
+}
+
+### 11) Coupon Fixed applied on shipping
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": "Local",
+  "subtotal": 140,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [
+    { "weightKg": 3.0, "size": "Medium" }
+  ],
+  "coupon": { "type": "Fixed", "value": 8 },
+  "pricingModel": "Brackets",
+  "roundingRule": "None"
+}
+
+### 12) Free shipping threshold
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": "National",
+  "subtotal": 250,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [
+    { "weightKg": 2.2, "size": "Small" }
+  ],
+  "freeShippingThreshold": 200,
+  "pricingModel": "Brackets",
+  "roundingRule": "None"
+}
+
+### 13) Max cap per zone
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": "International",
+  "subtotal": 100,
+  "options": { "rapid": true, "fragil": true },
+  "parcels": [
+    { "weightKg": 8.5, "size": "Large" }
+  ],
+  "maxCap": 60,
+  "pricingModel": "Brackets",
+  "roundingRule": "None"
+}
+
+### 14) Fallback estimator - unknown zone (null) + fallback price
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": null,
+  "subtotal": 100,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [
+    { "weightKg": 1.0, "size": "Small" }
+  ],
+  "fallbackZonePrice": 19.5,
+  "pricingModel": "Brackets",
+  "roundingRule": "None"
+}
+
+### 15) Invalid - missing pricingModel (expect 400)
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": "Local",
+  "subtotal": 100,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [
+    { "weightKg": 1.0, "size": "Small" }
+  ],
+  "roundingRule": "None"
+}
+
+### 16) Invalid - missing parcel size (expect 400)
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": "Local",
+  "subtotal": 100,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [
+    { "weightKg": 1.0 }
+  ],
+  "pricingModel": "Brackets",
+  "roundingRule": "None"
+}
+
+### 17) Invalid - null zone without fallback price (expect 400)
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": null,
+  "subtotal": 100,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [
+    { "weightKg": 1.0, "size": "Small" }
+  ],
+  "pricingModel": "Brackets",
+  "roundingRule": "None"
+}
+
+### 18) Invalid - negative parcel weight (expect 400)
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": "Local",
+  "subtotal": 100,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [
+    { "weightKg": -1.0, "size": "Small" }
+  ],
+  "pricingModel": "Brackets",
+  "roundingRule": "None"
+}
+
+### 19) Invalid - negative coupon value (expect 400)
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": "Local",
+  "subtotal": 100,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [
+    { "weightKg": 1.0, "size": "Small" }
+  ],
+  "coupon": { "type": "Percent", "value": -5 },
+  "pricingModel": "Brackets",
+  "roundingRule": "None"
+}
+
+### 20) Invalid - empty parcels (expect 400)
+POST {{ProiectTSS_HostAddress}}/shipping/quote
+Content-Type: application/json
+
+{
+  "zone": "Local",
+  "subtotal": 100,
+  "options": { "rapid": false, "fragil": false },
+  "parcels": [],
+  "pricingModel": "Brackets",
+  "roundingRule": "None"
+}
