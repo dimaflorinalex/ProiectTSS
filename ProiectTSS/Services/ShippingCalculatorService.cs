@@ -35,12 +35,7 @@ public class ShippingCalculatorService : IShippingCalculatorService
 
         if (zone is null)
         {
-            if (request.FallbackZonePrice is null || request.FallbackZonePrice < 0)
-            {
-                throw new ArgumentException("Unknown zone requires fallbackZonePrice.");
-            }
-
-            breakdown.BaseFee = request.FallbackZonePrice.Value;
+            breakdown.BaseFee = request.FallbackZonePrice!.Value;
             rules.Add(RuleFallbackZonePrice);
         }
         else
@@ -157,6 +152,11 @@ public class ShippingCalculatorService : IShippingCalculatorService
         if (zone is null && request.FallbackZonePrice is null)
         {
             throw new ArgumentException("zone is unknown and fallbackZonePrice is missing.");
+        }
+
+        if (zone is null && request.FallbackZonePrice < 0)
+        {
+            throw new ArgumentException("Unknown zone requires fallbackZonePrice.");
         }
 
         if (model is null)
