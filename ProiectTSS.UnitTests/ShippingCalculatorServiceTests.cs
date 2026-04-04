@@ -245,6 +245,26 @@ public class ShippingCalculatorServiceTests
     }
 
     /// <summary>
+    /// Ensures coupon rule token is present in applied rules.
+    /// </summary>
+    [Test]
+    public void Calculate_WhenCouponIsApplied_RuleAppliedContainsCouponDiscountToken()
+    {
+        // Arrange
+        var request = CreateValidRequest();
+
+        request.Zone = ShippingZone.Local;
+        request.PricingModel = PricingModel.Brackets;
+        request.Coupon = new CouponInput { Type = CouponType.Fixed, Value = 1m };
+
+        // Act
+        var result = _service.Calculate(request);
+
+        // Assert
+        Assert.That(result.RuleApplied, Does.Contain("COUPON_DISCOUNT"));
+    }
+
+    /// <summary>
     /// Validates coupon discount clamping to shipping value.
     /// </summary>
     [Test]
@@ -306,6 +326,27 @@ public class ShippingCalculatorServiceTests
         // Assert
         Assert.That(result.ShippingCost, Is.EqualTo(60m));
         Assert.That(result.Breakdown.CapReduction, Is.EqualTo(57m));
+    }
+
+    /// <summary>
+    /// Ensures max cap rule token is present in applied rules when cap is effectively applied.
+    /// </summary>
+    [Test]
+    public void Calculate_WhenCapIsApplied_RuleAppliedContainsMaxCapToken()
+    {
+        // Arrange
+        var request = CreateValidRequest();
+        request.Zone = ShippingZone.International;
+        request.PricingModel = PricingModel.Brackets;
+        request.Options = new ShippingOptions { Fragil = true, Rapid = true };
+        request.Parcels = [new ParcelInput { WeightKg = 8.5m, Size = ParcelSize.Large }];
+        request.MaxCap = 60m;
+
+        // Act
+        var result = _service.Calculate(request);
+
+        // Assert
+        Assert.That(result.RuleApplied, Does.Contain("MAX_CAP"));
     }
 
     /// <summary>
