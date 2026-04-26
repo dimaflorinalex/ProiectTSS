@@ -3,7 +3,10 @@
 ## Team members:
 - Dima Florin-Alexandru - Group 462 - FMI Unibuc
 - Copilot (GPT-5.3-Codex)
- 
+
+## Demo
+[![Watch the demo](https://img.youtube.com/vi/k5R0SPYNmCI/maxresdefault.jpg)](https://www.youtube.com/watch?v=k5R0SPYNmCI)
+
 ## Project Scope
 This repository contains a .NET 10 shipping quote API and a comprehensive test suite that illustrates the testing strategies required in the course:
 - equivalence partitioning,
