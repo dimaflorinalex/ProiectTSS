@@ -1,0 +1,33 @@
+Summary
+  Generated on: 27.04.2026 - 00:03:37
+  Coverage date: 20.04.2026 - 00:19:17 - 27.04.2026 - 00:03:36
+  Parser: MultiReport (8x Cobertura)
+  Assemblies: 1
+  Classes: 11
+  Files: 6
+  Line coverage: 62.8%
+  Covered lines: 427
+  Uncovered lines: 252
+  Coverable lines: 679
+  Total lines: 1236
+  Branch coverage: 59.1% (214 of 362)
+  Covered branches: 214
+  Total branches: 362
+  Method coverage: 80% (60 of 75)
+  Full method coverage: 70.6% (53 of 75)
+  Covered methods: 60
+  Fully covered methods: 53
+  Total methods: 75
+
+ProiectTSS                                        62.8%
+  Microsoft.AspNetCore.OpenApi.Generated          34.6%
+  Program                                          100%
+  ProiectTSS.Controllers.ShippingController        100%
+  ProiectTSS.Dtos.CouponInput                      100%
+  ProiectTSS.Dtos.ParcelInput                      100%
+  ProiectTSS.Dtos.ShippingBreakdown                100%
+  ProiectTSS.Dtos.ShippingOptions                  100%
+  ProiectTSS.Dtos.ShippingQuoteRequest             100%
+  ProiectTSS.Dtos.ShippingQuoteResponse            100%
+  ProiectTSS.Services.ShippingCalculatorService    100%
+  System.Runtime.CompilerServices                    0%
