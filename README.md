@@ -211,7 +211,120 @@ flowchart LR
 
 ---
 
+### 3) Rule-to-test traceability matrix
+| Rule or behavior | Where it is implemented | Primary test evidence |
+|---|---|---|
+| Brackets pricing per zone and weight | ShippingCalculatorService.GetBracketFee | ShippingCalculatorServiceTests.Calculate_WhenBracketsLocalAndWeightBetween0And1_ReturnsExpectedCost; StrategyBlackBoxTests.Calculate_WhenWeightAtBoundary_ReturnsExpectedBracketTransition |
+| BasePlusPerKg pricing | ShippingCalculatorService.GetBaseFee + GetPerKgRate | ShippingCalculatorServiceTests.Calculate_WhenBasePlusPerKgModel_ReturnsExpectedCost |
+| Weight rounding rules | ShippingCalculatorService.ApplyRounding | ShippingCalculatorServiceTests.Calculate_WhenRoundingCeil1Kg_AppliesRoundedWeight; Calculate_WhenRoundingCeilHalfKg_AppliesRoundedWeight |
+| Size fee by zone and size | ShippingCalculatorService.GetSizeFee | ShippingCalculatorServiceTests.Calculate_WhenLargeParcelsAcrossZones_UsesZoneSpecificLargeSizeFees |
+| Fragile surcharge | ShippingCalculatorService.Calculate | ShippingCalculatorServiceTests.Calculate_WhenFragileAndRapidEnabled_AppliesBothSurcharges |
+| Rapid surcharge | ShippingCalculatorService.Calculate | ShippingCalculatorServiceTests.Calculate_WhenFragileAndRapidEnabled_AppliesBothSurcharges |
+| Free shipping threshold (strict >) | ShippingCalculatorService.Calculate | StrategyBlackBoxTests.Calculate_WhenSubtotalEqualsFreeShippingThreshold_DoesNotApplyFreeShipping |
+| Coupon application | ShippingCalculatorService.Calculate + CalculateCouponDiscount | ShippingCalculatorServiceTests.Calculate_WhenPercentCouponProvided_AppliesPercentDiscount; Calculate_WhenFixedCouponProvided_AppliesFixedDiscount |
+| Max cap (strict >) | ShippingCalculatorService.Calculate | ShippingCalculatorServiceTests.Calculate_WhenMaxCapIsSetAndExceeded_AppliesCapReduction; StrategyBlackBoxTests.Calculate_WhenShippingEqualsCap_DoesNotApplyCapReduction |
+| RuleApplied traceability tokens | ShippingCalculatorService.Calculate | ShippingCalculatorServiceTests.Calculate_WhenCouponIsApplied_RuleAppliedContainsCouponDiscountToken; Calculate_WhenCapIsApplied_RuleAppliedContainsMaxCapToken |
+| Request validation | ShippingCalculatorService.ValidateRequest | ShippingCalculatorServiceTests.Calculate_WhenParcelsAreEmpty_ThrowsArgumentException and other validation tests |
+| Controller error mapping | ShippingController.Quote | ShippingControllerTests.Quote_WhenServiceThrowsArgumentException_ReturnsBadRequestObjectResult |
+
+### 4) Boundary derivation table
+| Boundary or threshold | Where it comes from | Test evidence |
+|---|---|---|
+| Weight <= 1 kg, <= 5 kg, <= 10 kg, > 10 kg | Bracket thresholds in GetBracketFee | StrategyBlackBoxTests.Calculate_WhenWeightAtBoundary_ReturnsExpectedBracketTransition |
+| Free shipping applied only when Subtotal > FreeShippingThreshold | Strict greater-than check in Calculate | StrategyBlackBoxTests.Calculate_WhenSubtotalEqualsFreeShippingThreshold_DoesNotApplyFreeShipping |
+| Cap applied only when net > MaxCap and MaxCap >= 0 | Max cap guard in Calculate | StrategyBlackBoxTests.Calculate_WhenShippingEqualsCap_DoesNotApplyCapReduction; ShippingCalculatorServiceTests.Calculate_WhenMaxCapIsSetAndExceeded_AppliesCapReduction |
+
+### 5) Decision precedence table
+The calculation applies discounts and caps in a strict order. This table shows how the order is enforced and how it is tested.
+
+| Decision order | Logic in Calculate | Test evidence |
+|---|---|---|
+| 1. Free shipping check | If Subtotal > FreeShippingThreshold then shipping is zeroed | ShippingCalculatorServiceTests.Calculate_WhenFreeShippingThresholdIsMet_ReturnsZeroShipping |
+| 2. Coupon check | Else if Coupon != null then coupon discount applies | ShippingCalculatorServiceTests.Calculate_WhenPercentCouponProvided_AppliesPercentDiscount; Calculate_WhenFixedCouponProvided_AppliesFixedDiscount |
+| 3. Max cap check | After discounts, if net > MaxCap then apply cap | ShippingCalculatorServiceTests.Calculate_WhenMaxCapIsSetAndExceeded_AppliesCapReduction |
+
+### 6) Independent path enumeration
+| Path label | Path summary | Test evidence |
+|---|---|---|
+| IP1 Fallback | Zone null with fallback price | StrategyWhiteBoxPathTests.Calculate_WhenZoneIsNull_UsesFallbackRulePath |
+| IP2 BasePlusPerKg | Zone set, BasePlusPerKg model | StrategyWhiteBoxPathTests.Calculate_WhenPricingModelIsBasePlusPerKg_UsesBasePlusPerKgRulePath |
+| IP3 Composite modifiers | Fragile + Rapid + Coupon | StrategyWhiteBoxPathTests.Calculate_WhenFragileRapidAndCouponAreEnabled_ExecutesCompositeRulePath |
+| IP4 Validation error | Coupon exists but type missing | StrategyWhiteBoxPathTests.Calculate_WhenCouponExistsButTypeMissing_ThrowsValidationException |
+
+### 7) Expected value derivation example
+The following example shows how expected values are computed for a multi-step case.
+
+Scenario (National, Brackets, 2.5 kg, Medium, Fragile + Rapid):
+- Bracket fee for 2.5 kg in National zone = 22
+- Size fee for Medium in National zone = 3
+- Fragile surcharge = 5 per parcel
+- Pre-rapid subtotal = 22 + 3 + 5 = 30
+- Rapid surcharge = 30 x 0.30 = 9
+- Final shipping cost = 30 + 9 = 39
+
+Test evidence: ShippingCalculatorServiceTests.Calculate_WhenFragileAndRapidEnabled_AppliesBothSurcharges
+
 ## Black-box testing details
+
+### Functional testing methods (course-aligned summary)
+Functional testing uses the specification, not the internal structure. The course emphasizes preconditions and postconditions and partitions the input domain so values in the same class behave similarly.
+
+| Method | Core idea (from course) | How it is applied here |
+|---|---|---|
+| Equivalence partitioning | Split input domain into classes with identical specified behavior and pick one representative per class | Zone, PricingModel, CouponType, RoundingRule, and validation inputs are partitioned and sampled in StrategyBlackBoxTests and ShippingCalculatorServiceTests |
+| Boundary value analysis | Focus on boundaries of equivalence classes where errors are likely | Bracket thresholds at 1, 5, 10; free-shipping strict >; cap strict > in StrategyBlackBoxTests |
+| Category partitioning | Define categories and alternatives, then combine with constraints to avoid infeasible cases | Categories were identified (zone, pricing model, rounding rule, parcel size, options, discounts), then reduced to representative combinations to avoid explosion |
+| Cause-effect graphing | Model logical dependency between input conditions (causes) and outcomes (effects) | Applied to discount logic to show masking between free shipping and coupon |
+
+### Equivalence partitioning applied to request inputs
+| Input dimension | Valid classes | Invalid classes (validation tests) |
+|---|---|---|
+| Zone | Local, National, International | Null without fallback, invalid enum value |
+| PricingModel | Brackets, BasePlusPerKg | Null |
+| RoundingRule | None, Ceil1Kg, Ceil0_5Kg | Null |
+| Parcel Size | Small, Medium, Large | Null |
+| Coupon Type | Percent, Fixed | Null when coupon present |
+| Numeric values | Subtotal >= 0, WeightKg >= 0, MaxCap >= 0 | Negative values |
+
+### Boundary value selection (explicit)
+| Boundary | Selected values | Reason |
+|---|---|---|
+| Bracket thresholds | 1.0, 1.01, 5.0, 5.01, 10.0, 10.01 | Thresholds in GetBracketFee with strict <= checks |
+| Free shipping | Subtotal == FreeShippingThreshold | Free shipping only when Subtotal > Threshold |
+| Cap | Shipping == MaxCap | Cap applied only when net > MaxCap |
+
+### Category partitioning specification (reduced by constraints)
+The categories below are derived from the request specification. The full Cartesian product is large, so representative combinations are selected to avoid infeasible or redundant cases.
+
+| Category | Alternatives |
+|---|---|
+| Zone | Local, National, International, Null + Fallback |
+| PricingModel | Brackets, BasePlusPerKg |
+| RoundingRule | None, Ceil1Kg, Ceil0_5Kg |
+| Parcel Size | Small, Medium, Large |
+| Options | Fragile on/off, Rapid on/off |
+| Discounts | Free shipping met/not met, Coupon present/not present |
+
+### Cause-effect graph (discount logic)
+The graph focuses on the discount part of Calculate, which has a masking relationship: free shipping suppresses coupon discounts.
+
+```mermaid
+flowchart LR
+    C1[Free shipping condition met] -->|implies| E1[Apply FREE_SHIPPING_THRESHOLD]
+    C2[Coupon present] -->|implies| E2[Apply COUPON_DISCOUNT]
+    C1 -. masks .-> E2
+    C3[Cap condition met] -->|implies| E3[Apply MAX_CAP]
+```
+
+### Decision table derived from cause-effect graph
+| Rule | Free shipping met | Coupon present | Cap condition met | Expected effects |
+|---|---|---|---|---|
+| R1 | Yes | Yes | No | Apply FREE_SHIPPING_THRESHOLD only |
+| R2 | Yes | No | Yes | Apply FREE_SHIPPING_THRESHOLD and MAX_CAP |
+| R3 | No | Yes | No | Apply COUPON_DISCOUNT |
+| R4 | No | Yes | Yes | Apply COUPON_DISCOUNT and MAX_CAP |
+| R5 | No | No | Yes | Apply MAX_CAP |
+| R6 | No | No | No | No discount rules applied |
 
 ### Equivalence classes (examples)
 | Input | Partitions | Expected behavior |
@@ -265,6 +378,34 @@ flowchart TD
     P16 -->|Yes| P17[Cap applied]
     P16 -->|No| P18[Return]
     P17 --> P18
+```
+
+### Validation decision tree (ValidateRequest)
+```mermaid
+flowchart TD
+    V0[Start] --> V1{Parcels count > 0?}
+    V1 -->|No| VE1[Throw: parcels must contain at least one item]
+    V1 -->|Yes| V2{Any WeightKg < 0?}
+    V2 -->|Yes| VE2[Throw: weightKg must be >= 0]
+    V2 -->|No| V3{Subtotal < 0?}
+    V3 -->|Yes| VE3[Throw: subtotal must be >= 0]
+    V3 -->|No| V4{Zone is null and FallbackZonePrice missing?}
+    V4 -->|Yes| VE4[Throw: fallbackZonePrice missing]
+    V4 -->|No| V5{Zone is null and FallbackZonePrice < 0?}
+    V5 -->|Yes| VE5[Throw: fallbackZonePrice invalid]
+    V5 -->|No| V6{PricingModel is null?}
+    V6 -->|Yes| VE6[Throw: pricingModel must be explicitly set]
+    V6 -->|No| V7{RoundingRule is null?}
+    V7 -->|Yes| VE7[Throw: roundingRule must be explicitly set]
+    V7 -->|No| V8{Any Parcel Size is null?}
+    V8 -->|Yes| VE8[Throw: parcel size must be explicitly set]
+    V8 -->|No| V9{Coupon present?}
+    V9 -->|No| V12[Valid request]
+    V9 -->|Yes| V10{Coupon.Type is null?}
+    V10 -->|Yes| VE9[Throw: coupon.type must be explicitly set]
+    V10 -->|No| V11{Coupon.Value < 0?}
+    V11 -->|Yes| VE10[Throw: coupon.value must be >= 0]
+    V11 -->|No| V12[Valid request]
 ```
 
 ---
